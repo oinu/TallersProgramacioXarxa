@@ -1,3 +1,4 @@
 ﻿  Main.cpp
-c:\users\alumne\desktop\tallersprogramacioxarxa\taller1\project0\main.cpp(164): warning C4244: 'argument': conversion from '::size_t' to 'float', possible loss of data
-  Project0.vcxproj -> C:\Users\alumne\Desktop\TallersProgramacioXarxa\Taller1\x64\Debug\Threads.exe
+c:\users\esalles\desktop\tallersprogramacioxarxa\taller1\project0\main.cpp(152): warning C4244: 'argument': conversion from '::size_t' to 'float', possible loss of data
+  Project0.vcxproj -> C:\Users\esalles\Desktop\TallersProgramacioXarxa\Taller1\x64\Debug\Threads.exe
+  Project0.vcxproj -> C:\Users\esalles\Desktop\TallersProgramacioXarxa\Taller1\x64\Debug\Threads.pdb (Partial PDB)

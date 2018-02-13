@@ -1,0 +1,6 @@
+﻿  Main.cpp
+Main.cpp(152): warning C4244: 'argument': conversion from '::size_t' to 'float', possible loss of data
+  Generating code
+  All 264 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  Project0.vcxproj -> C:\Users\esalles\Desktop\TallersProgramacioXarxa\Taller1\x64\Release\Threads.exe

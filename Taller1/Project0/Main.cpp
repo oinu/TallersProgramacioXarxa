@@ -19,21 +19,25 @@ std::mutex mu;
 //socket: Es el socket al cual debemos escuchar.
 //recived: La longitud de los datos que recibiremos.
 //aMensajes: Es donde contendra todos los mensajes del chat.
-void RecivedFunction(sf::TcpSocket* socket,size_t* recived, vector<string>* aMensajes)
+void RecivedFunction(sf::TcpSocket* socket,size_t* recived, vector<string>* aMensajes, sf::RenderWindow* window)
 {
-	mu.lock();
-	char buffer[BUFFER_SIZE];
-	sf::Socket::Status status= socket->receive(buffer, sizeof(buffer), *recived);
-	string s = buffer;
-	if (status != sf::Socket::Status::Disconnected)
+	while (window->isOpen())
 	{
-		aMensajes->push_back(s);
-		if (aMensajes->size() > 25)
+		mu.lock();
+		char buffer[BUFFER_SIZE];
+		sf::Socket::Status status = socket->receive(buffer, sizeof(buffer), *recived);
+		string s = buffer;
+		if (status != sf::Socket::Status::Disconnected)
 		{
-			aMensajes->erase(aMensajes->begin(), aMensajes->begin() + 1);
+			aMensajes->push_back(s);
+			if (aMensajes->size() > 25)
+			{
+				aMensajes->erase(aMensajes->begin(), aMensajes->begin() + 1);
+			}
 		}
+		mu.unlock();
 	}
-	mu.unlock();
+	
 }
 
 int main()
@@ -98,7 +102,10 @@ int main()
 	separator.setPosition(0, 550);
 
 	string msn;
-	thread t(RecivedFunction, &socket, &recived, &aMensajes);
+	
+	//RECIVE
+	//Se genera un thread (hilo), que escucha si llegan mensajes o no.
+	thread t(RecivedFunction, &socket, &recived, &aMensajes, &window);
 
 	while (window.isOpen())
 	{
@@ -137,25 +144,6 @@ int main()
 			}
 		}
 		
-		//RECIVE
-		/*if (connectionType == 's')
-		{
-			string s = RecivedFunction(&socket, &recived);
-			if (s != "")
-			{
-				aMensajes.push_back(s);
-				if (aMensajes.size() > 25)
-				{
-					aMensajes.erase(aMensajes.begin(), aMensajes.begin() + 1);
-				}
-			}
-			
-		}*/
-
-		//SE TIENE QUE LAZAR UN THREAD CADA VEZ QUE UN TERMINA?
-		//std::thread t(RecivedFunction,&socket, &recived,&aMensajes);
-		
-		//t.join();
 
 		window.draw(separator);
 		for (size_t i = 0; i < aMensajes.size(); i++)
@@ -173,6 +161,7 @@ int main()
 		window.display();
 		window.clear();
 	}
+	t.join();
 
 	socket.disconnect();
 
