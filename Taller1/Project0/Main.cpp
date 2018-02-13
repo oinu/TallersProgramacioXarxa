@@ -13,39 +13,19 @@
 
 
 using namespace std;
-std::mutex mu;
-
-//Escucha por un socket determinado y escribe el mensaje llegado.
-//socket: Es el socket al cual debemos escuchar.
-//recived: La longitud de los datos que recibiremos.
-//aMensajes: Es donde contendra todos los mensajes del chat.
-void RecivedFunction(sf::TcpSocket* socket,size_t* recived, vector<string>* aMensajes, sf::RenderWindow* window)
-{
-	while (window->isOpen())
-	{
-		mu.lock();
-		char buffer[BUFFER_SIZE];
-		sf::Socket::Status status = socket->receive(buffer, sizeof(buffer), *recived);
-		string s = buffer;
-		if (status != sf::Socket::Status::Disconnected)
-		{
-			aMensajes->push_back(s);
-			if (aMensajes->size() > 25)
-			{
-				aMensajes->erase(aMensajes->begin(), aMensajes->begin() + 1);
-			}
-		}
-		mu.unlock();
-	}
-	
-}
 
 int main()
 {
 	//ESTABLECER CONNECION
 	sf::TcpSocket socket;
+
+	//Deshabilitamos el bloqueo de sockets, con la finalidad de no bloquear en el momento de recivir y enviar.
+	socket.setBlocking(false);
+
 	char connectionType;
-	size_t recived;
+	char buffer[BUFFER_SIZE];
+	size_t recived,sended;
+	sf::Socket::Status socketStatus;
 
 	cout << "Introduce (s) para Server o (c) para Cliente:";
 	cin >> connectionType;
@@ -62,6 +42,8 @@ int main()
 		
 		//Cuando tenemos una coneccion con un cliente, cerramos la escucha.
 		listener.close();
+		
+		
 	}
 
 	//Si es el cliente
@@ -102,10 +84,6 @@ int main()
 	separator.setPosition(0, 550);
 
 	string msn;
-	
-	//RECIVE
-	//Se genera un thread (hilo), que escucha si llegan mensajes o no.
-	thread t(RecivedFunction, &socket, &recived, &aMensajes, &window);
 
 	while (window.isOpen())
 	{
@@ -129,8 +107,17 @@ int main()
 					}
 					// SEND
 					// Pasamos el mensaje a std::string para hacerlo mas facil en el momento de enviarlo.
+					
+					//socket.send(msn.c_str(), msn.size() + 1);
 					msn = mensaje;
-					socket.send(msn.c_str(), msn.size() + 1);
+					do
+					{
+						socketStatus = socket.send(msn.c_str(),msn.size()+1,sended);
+						if (socketStatus == sf::Socket::Status::Partial)
+						{
+							msn = msn.substr(sended + 1, msn.size() - sended);
+						}
+					} while (socketStatus==sf::Socket::Status::Partial);
 
 					mensaje = ">";
 				}
@@ -143,7 +130,20 @@ int main()
 				break;
 			}
 		}
+
+		//RECIVE
+		//Al eliminar el bloqueo no es necesario utilizar un thread para la escucha.
 		
+		socketStatus = socket.receive(buffer, sizeof(buffer), recived);
+		msn = buffer;
+		if (socketStatus == sf::Socket::Status::Done)
+		{
+			aMensajes.push_back(msn);
+			if (aMensajes.size() > 25)
+			{
+				aMensajes.erase(aMensajes.begin(), aMensajes.begin() + 1);
+			}
+		}
 
 		window.draw(separator);
 		for (size_t i = 0; i < aMensajes.size(); i++)
@@ -161,7 +161,6 @@ int main()
 		window.display();
 		window.clear();
 	}
-	t.join();
 
 	socket.disconnect();
 
