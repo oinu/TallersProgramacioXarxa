@@ -13,43 +13,40 @@
 
 
 using namespace std;
-std::mutex mu;
 
-//Escucha por un socket determinado y escribe el mensaje llegado.
-//socket: Es el socket al cual debemos escuchar.
-//recived: La longitud de los datos que recibiremos.
-//aMensajes: Es donde contendra todos los mensajes del chat.
-void RecivedFunction(sf::TcpSocket* socket,size_t* recived, vector<string>* aMensajes, sf::RenderWindow* window)
+void RecivedFunction(sf::TcpSocket* socket, size_t* recived, vector<string>* aMensajes, sf::RenderWindow* window, sf::SocketSelector* ss)
 {
-	while (window->isOpen())
+	char buffer[BUFFER_SIZE];
+	string msn;
+	while (ss->wait() && window->isOpen())
 	{
-		mu.lock();
-		char buffer[BUFFER_SIZE];
-		sf::Socket::Status status = socket->receive(buffer, sizeof(buffer), *recived);
-		string s = buffer;
-		if (status != sf::Socket::Status::Disconnected)
+		if (ss->isReady(*socket))
 		{
-			aMensajes->push_back(s);
+			socket->receive(buffer, sizeof(buffer), *recived);
+			msn = buffer;
+			aMensajes->push_back(msn);
 			if (aMensajes->size() > 25)
 			{
 				aMensajes->erase(aMensajes->begin(), aMensajes->begin() + 1);
 			}
 		}
-		mu.unlock();
 	}
-	
 }
 
 int main()
 {
 	//ESTABLECER CONNECION
 	sf::TcpSocket socket;
+	sf::SocketSelector ss;
+
 	char connectionType;
-	size_t recived;
+	char buffer[BUFFER_SIZE];
+	size_t recived, sended;
+	sf::Socket::Status socketStatus;
 
 	cout << "Introduce (s) para Server o (c) para Cliente:";
 	cin >> connectionType;
-	
+
 	// Si es el servidor
 	if (connectionType == 's')
 	{
@@ -59,9 +56,11 @@ int main()
 
 		//Esperamos peticion de un cliente
 		listener.accept(socket);
-		
+
 		//Cuando tenemos una coneccion con un cliente, cerramos la escucha.
 		listener.close();
+
+
 	}
 
 	//Si es el cliente
@@ -71,6 +70,9 @@ int main()
 		sf::IpAddress ip = sf::IpAddress::getLocalAddress();
 		socket.connect(ip, CLIENT_PORT);
 	}
+
+	//Se añade el socket al Socket Selector
+	ss.add(socket);
 
 	std::vector<std::string> aMensajes;
 
@@ -102,10 +104,7 @@ int main()
 	separator.setPosition(0, 550);
 
 	string msn;
-	
-	//RECIVE
-	//Se genera un thread (hilo), que escucha si llegan mensajes o no.
-	thread t(RecivedFunction, &socket, &recived, &aMensajes, &window);
+	thread t(RecivedFunction,&socket, &recived, &aMensajes, &window, &ss);
 
 	while (window.isOpen())
 	{
@@ -143,8 +142,8 @@ int main()
 				break;
 			}
 		}
-		
 
+		
 		window.draw(separator);
 		for (size_t i = 0; i < aMensajes.size(); i++)
 		{
@@ -161,7 +160,6 @@ int main()
 		window.display();
 		window.clear();
 	}
-	t.join();
 
 	socket.disconnect();
 
