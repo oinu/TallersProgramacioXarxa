@@ -1,0 +1,9 @@
+﻿  main.cpp
+main.cpp(154): warning C4244: 'argument': conversion from '::size_t' to 'float', possible loss of data
+main.cpp(48): warning C4101: 'socketStatus': unreferenced local variable
+main.cpp(47): warning C4101: 'sended': unreferenced local variable
+main.cpp(46): warning C4101: 'buffer': unreferenced local variable
+  Generating code
+  All 261 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  Server.vcxproj -> C:\Users\alumne\Desktop\ProgramacioXarxa\TallersProgramacioXarxa\Taller2\x64\Release\Server.exe
