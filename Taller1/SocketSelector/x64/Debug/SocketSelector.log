@@ -1,2 +1,6 @@
-﻿  SocketSelector.vcxproj -> C:\Users\esalles\Desktop\TallersProgramacioXarxa\Taller1\x64\Debug\SocketSelector.exe
-  SocketSelector.vcxproj -> C:\Users\esalles\Desktop\TallersProgramacioXarxa\Taller1\x64\Debug\SocketSelector.pdb (Partial PDB)
+﻿  main.cpp
+c:\users\alumne\desktop\programacioxarxa\tallersprogramacioxarxa\taller1\socketselector\main.cpp(154): warning C4244: 'argument': conversion from '::size_t' to 'float', possible loss of data
+c:\users\alumne\desktop\programacioxarxa\tallersprogramacioxarxa\taller1\socketselector\main.cpp(48): warning C4101: 'socketStatus': unreferenced local variable
+c:\users\alumne\desktop\programacioxarxa\tallersprogramacioxarxa\taller1\socketselector\main.cpp(47): warning C4101: 'sended': unreferenced local variable
+c:\users\alumne\desktop\programacioxarxa\tallersprogramacioxarxa\taller1\socketselector\main.cpp(46): warning C4101: 'buffer': unreferenced local variable
+  SocketSelector.vcxproj -> C:\Users\alumne\Desktop\ProgramacioXarxa\TallersProgramacioXarxa\Taller1\x64\Debug\SocketSelector.exe

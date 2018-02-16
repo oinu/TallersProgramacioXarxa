@@ -18,16 +18,19 @@ void RecivedFunction(sf::TcpSocket* socket, size_t* recived, vector<string>* aMe
 {
 	char buffer[BUFFER_SIZE];
 	string msn;
-	while (ss->wait() && window->isOpen())
+	while (ss->wait())
 	{
 		if (ss->isReady(*socket))
 		{
-			socket->receive(buffer, sizeof(buffer), *recived);
-			msn = buffer;
-			aMensajes->push_back(msn);
-			if (aMensajes->size() > 25)
+			sf::Socket::Status st=socket->receive(buffer, sizeof(buffer), *recived);
+			if (st==sf::Socket::Status::Done)
 			{
-				aMensajes->erase(aMensajes->begin(), aMensajes->begin() + 1);
+				msn = buffer;
+				aMensajes->push_back(msn);
+				if (aMensajes->size() > 25)
+				{
+					aMensajes->erase(aMensajes->begin(), aMensajes->begin() + 1);
+				}
 			}
 		}
 	}
@@ -160,6 +163,11 @@ int main()
 		window.display();
 		window.clear();
 	}
+
+	//Acabar el Thread
+	ss.clear();
+	t.join();
+	
 
 	socket.disconnect();
 
