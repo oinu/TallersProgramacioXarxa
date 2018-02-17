@@ -14,161 +14,155 @@
 
 using namespace std;
 
-void RecivedFunction(sf::TcpSocket* socket, size_t* recived, vector<string>* aMensajes, sf::RenderWindow* window, sf::SocketSelector* ss)
+/*void RecivedFunction(vector<sf::TcpSocket> *sl,sf::TcpListener* listener, sf::SocketSelector* ss)
 {
 	char buffer[BUFFER_SIZE];
 	string msn;
+	size_t recived;
+	bool found = false;
+	int i = 0;
+
+	//Cogemos la referencia del vector.
+	vector<sf::TcpSocket> socketList = *sl;
+
+	//Mientras haya elementos en el Socket Selector, esperara a que algun socket le envie algo.
 	while (ss->wait())
 	{
-		if (ss->isReady(*socket))
+		while (!found || i<socketList.size())
 		{
-			sf::Socket::Status st=socket->receive(buffer, sizeof(buffer), *recived);
-			if (st==sf::Socket::Status::Done)
+			if (ss->isReady(*listener))
 			{
-				msn = buffer;
-				aMensajes->push_back(msn);
-				if (aMensajes->size() > 25)
-				{
-					aMensajes->erase(aMensajes->begin(), aMensajes->begin() + 1);
-				}
+				//Se añade el socket al Socket Selector
+				sf::TcpSocket socket;
+				//Esperamos peticion de un cliente
+				listener->accept(socket);
+				ss->add(socket);
+				//Indicamos que hemos encontrado el elemento disparador.
+				found = true;
 			}
+			else if (ss->isReady(socketList[i]))
+			{
+				//Recive el paquete del socket destino
+				sf::Socket::Status st = socketList[i].receive(buffer, sizeof(buffer), recived);
+
+				//Si ha recibido el paquete
+				if (st == sf::Socket::Status::Done)
+				{
+					//Pasar el contenido del buffer, al string de mensaje.
+					msn = buffer;
+
+					//Le enviamos el mensaje al los clientes
+					for (int j = 0; j < socketList.size(); j++)
+					{
+						//Evitamos que el mensaje se envie al cliente original
+						if (i != j)
+						{
+							socketList[j].send(msn.c_str(), msn.size()+1);
+						}
+					}
+				}
+
+				found = true;
+			}
+			else i++;
 		}
+		
+		found = false;
+		i = 0;
 	}
-}
+}*/
 
 int main()
 {
 	//ESTABLECER CONNECION
-	sf::TcpSocket socket;
 	sf::SocketSelector ss;
+	vector<sf::TcpSocket> socketList;
 
-	char connectionType;
+	sf::TcpListener listener;
+
 	char buffer[BUFFER_SIZE];
-	size_t recived, sended;
-	sf::Socket::Status socketStatus;
-
-	cout << "Introduce (s) para Server o (c) para Cliente:";
-	cin >> connectionType;
-
-	// Si es el servidor
-	if (connectionType == 's')
-	{
-		//Nos ponemos en escucha en el puerto indicado
-		sf::TcpListener listener;
-		listener.listen(SERVER_PORT);
-
-		//Esperamos peticion de un cliente
-		listener.accept(socket);
-
-		//Cuando tenemos una coneccion con un cliente, cerramos la escucha.
-		listener.close();
-
-
-	}
-
-	//Si es el cliente
-	else if (connectionType == 'c')
-	{
-		// Obtenemos nuestra direccion ip, y nos connectamos con el puerto indicado y nuestra ip
-		sf::IpAddress ip = sf::IpAddress::getLocalAddress();
-		socket.connect(ip, CLIENT_PORT);
-	}
-
-	//Se añade el socket al Socket Selector
-	ss.add(socket);
-
-	std::vector<std::string> aMensajes;
-
-	sf::Vector2i screenDimensions(800, 600);
-
-	sf::RenderWindow window;
-	window.create(sf::VideoMode(screenDimensions.x, screenDimensions.y), "Chat");
-
-	sf::Font font;
-	if (!font.loadFromFile("Roboto-Bold.ttf"))
-	{
-		std::cout << "Can't load the font file" << std::endl;
-	}
-
-	sf::String mensaje = " >";
-
-	sf::Text chattingText(mensaje, font, 24);
-	chattingText.setFillColor(sf::Color(0, 160, 0));
-	chattingText.setStyle(sf::Text::Bold);
-
-
-	sf::Text text(mensaje, font, 24);
-	text.setFillColor(sf::Color(0, 160, 0));
-	text.setStyle(sf::Text::Bold);
-	text.setPosition(0, 560);
-
-	sf::RectangleShape separator(sf::Vector2f(800, 5));
-	separator.setFillColor(sf::Color(200, 200, 200, 255));
-	separator.setPosition(0, 550);
-
 	string msn;
-	thread t(RecivedFunction,&socket, &recived, &aMensajes, &window, &ss);
-
-	while (window.isOpen())
-	{
-		sf::Event evento;
-		while (window.pollEvent(evento))
-		{
-			switch (evento.type)
-			{
-			case sf::Event::Closed:
-				window.close();
-				break;
-			case sf::Event::KeyPressed:
-				if (evento.key.code == sf::Keyboard::Escape)
-					window.close();
-				else if (evento.key.code == sf::Keyboard::Return)
-				{
-					aMensajes.push_back(mensaje);
-					if (aMensajes.size() > 25)
-					{
-						aMensajes.erase(aMensajes.begin(), aMensajes.begin() + 1);
-					}
-					// SEND
-					// Pasamos el mensaje a std::string para hacerlo mas facil en el momento de enviarlo.
-					msn = mensaje;
-					socket.send(msn.c_str(), msn.size() + 1);
-
-					mensaje = ">";
-				}
-				break;
-			case sf::Event::TextEntered:
-				if (evento.text.unicode >= 32 && evento.text.unicode <= 126)
-					mensaje += (char)evento.text.unicode;
-				else if (evento.text.unicode == 8 && mensaje.getSize() > 0)
-					mensaje.erase(mensaje.getSize() - 1, mensaje.getSize());
-				break;
-			}
-		}
-
+	size_t recived;
+	bool found = false;
+	int i = 0;
 		
-		window.draw(separator);
-		for (size_t i = 0; i < aMensajes.size(); i++)
+	
+	//Le indicamos que no bloquee, ya que debe acceptar peticiones en cualquier momento
+	listener.setBlocking(false);
+
+	//Le indicamos a que puerto debe escuchar para el servidor
+	listener.listen(SERVER_PORT);
+
+	//Añadimos el listener al Socket Selector
+	ss.add(listener);
+	
+	//Mientras haya elementos en el Socket Selector, esperara a que algun socket le envie algo.
+	while (ss.wait())
+	{
+		//Miramos cual ha dado señal
+		while (!found || i<socketList.size())
 		{
-			std::string chatting = aMensajes[i];
-			chattingText.setPosition(sf::Vector2f(0, 20 * i));
-			chattingText.setString(chatting);
-			window.draw(chattingText);
+			//Comprovamos si es un Listener
+			if (ss.isReady(listener))
+			{
+				//Se añade el socket al Socket Selector
+				sf::TcpSocket socket;
+				//Esperamos peticion de un cliente
+				sf::TcpListener::Status st=listener.accept(socket);
+				if (st != sf::TcpListener::Status::Done)
+				{
+					socketList.push_back(socket);
+				}
+					
+				ss.add(socket);
+				//Indicamos que hemos encontrado el elemento disparador.
+				found = true;
+				cout << "New User" << endl;
+			}
+
+			//Comprovamos si es un socket
+			else if (ss.isReady(socketList[i]))
+			{
+				//Recive el paquete del socket destino
+				sf::Socket::Status st = socketList[i].receive(buffer, sizeof(buffer), recived);
+
+				//Si ha recibido el paquete
+				if (st == sf::Socket::Status::Done)
+				{
+					//Pasar el contenido del buffer, al string de mensaje.
+					msn = buffer;
+
+					//Le enviamos el mensaje al los clientes
+					for (int j = 0; j < socketList.size(); j++)
+					{
+						//Evitamos que el mensaje se envie al cliente original
+						if (i != j)
+						{
+							socketList[j].send(msn.c_str(), msn.size() + 1);
+						}
+					}
+				}
+
+				found = true;
+			}
+			else i++;
 		}
-		std::string mensaje_ = mensaje + "_";
-		text.setString(mensaje_);
-		window.draw(text);
 
-
-		window.display();
-		window.clear();
+		found = false;
+		i = 0;
 	}
 
-	//Acabar el Thread
-	ss.clear();
-	t.join();
-	
 
-	socket.disconnect();
+	//Vaciar el Socket Selector
+	ss.clear();
+
+	//Paramos de escuchar el puerto, para así dejarlo libre.
+	listener.close();
+
+	//Desconnectamos todos los clientes
+	for (sf::TcpSocket &socket : socketList)
+	{
+		socket.disconnect();
+	}
 
 }

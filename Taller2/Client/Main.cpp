@@ -44,33 +44,11 @@ int main()
 {
 	//ESTABLECER CONNECION
 	sf::TcpSocket socket;
-	char connectionType;
 	size_t recived;
 
-	cout << "Introduce (s) para Server o (c) para Cliente:";
-	cin >> connectionType;
-	
-	// Si es el servidor
-	if (connectionType == 's')
-	{
-		//Nos ponemos en escucha en el puerto indicado
-		sf::TcpListener listener;
-		listener.listen(SERVER_PORT);
-
-		//Esperamos peticion de un cliente
-		listener.accept(socket);
-		
-		//Cuando tenemos una coneccion con un cliente, cerramos la escucha.
-		listener.close();
-	}
-
-	//Si es el cliente
-	else if (connectionType == 'c')
-	{
-		// Obtenemos nuestra direccion ip, y nos connectamos con el puerto indicado y nuestra ip
-		sf::IpAddress ip = sf::IpAddress::getLocalAddress();
-		socket.connect(ip, CLIENT_PORT);
-	}
+	// Obtenemos nuestra direccion ip, y nos connectamos con el puerto indicado y nuestra ip
+	sf::IpAddress ip = sf::IpAddress::getLocalAddress();
+	socket.connect(ip, CLIENT_PORT);
 
 	std::vector<std::string> aMensajes;
 
