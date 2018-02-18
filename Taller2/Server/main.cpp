@@ -14,142 +14,67 @@
 
 using namespace std;
 
-/*void RecivedFunction(vector<sf::TcpSocket> *sl,sf::TcpListener* listener, sf::SocketSelector* ss)
-{
-	char buffer[BUFFER_SIZE];
-	string msn;
-	size_t recived;
-	bool found = false;
-	int i = 0;
-
-	//Cogemos la referencia del vector.
-	vector<sf::TcpSocket> socketList = *sl;
-
-	//Mientras haya elementos en el Socket Selector, esperara a que algun socket le envie algo.
-	while (ss->wait())
-	{
-		while (!found || i<socketList.size())
-		{
-			if (ss->isReady(*listener))
-			{
-				//Se añade el socket al Socket Selector
-				sf::TcpSocket socket;
-				//Esperamos peticion de un cliente
-				listener->accept(socket);
-				ss->add(socket);
-				//Indicamos que hemos encontrado el elemento disparador.
-				found = true;
-			}
-			else if (ss->isReady(socketList[i]))
-			{
-				//Recive el paquete del socket destino
-				sf::Socket::Status st = socketList[i].receive(buffer, sizeof(buffer), recived);
-
-				//Si ha recibido el paquete
-				if (st == sf::Socket::Status::Done)
-				{
-					//Pasar el contenido del buffer, al string de mensaje.
-					msn = buffer;
-
-					//Le enviamos el mensaje al los clientes
-					for (int j = 0; j < socketList.size(); j++)
-					{
-						//Evitamos que el mensaje se envie al cliente original
-						if (i != j)
-						{
-							socketList[j].send(msn.c_str(), msn.size()+1);
-						}
-					}
-				}
-
-				found = true;
-			}
-			else i++;
-		}
-		
-		found = false;
-		i = 0;
-	}
-}*/
-
 int main()
 {
 	//ESTABLECER CONNECION
 	sf::SocketSelector ss;
-	vector<sf::TcpSocket> socketList;
+	vector<sf::TcpSocket*> socketList;
 
 	sf::TcpListener listener;
 
 	char buffer[BUFFER_SIZE];
 	string msn;
-	size_t recived;
-	bool found = false;
-	int i = 0;
-		
-	
-	//Le indicamos que no bloquee, ya que debe acceptar peticiones en cualquier momento
-	listener.setBlocking(false);
+	size_t recived;	
 
 	//Le indicamos a que puerto debe escuchar para el servidor
-	listener.listen(SERVER_PORT);
+	sf::TcpListener::Status stListener=listener.listen(SERVER_PORT);
 
 	//Añadimos el listener al Socket Selector
 	ss.add(listener);
-	
-	//Mientras haya elementos en el Socket Selector, esperara a que algun socket le envie algo.
-	while (ss.wait())
+
+	while (stListener != sf::TcpListener::Status::Disconnected)
 	{
-		//Miramos cual ha dado señal
-		while (!found || i<socketList.size())
+		//Mientras haya elementos en el Socket Selector, esperara a que algun socket le envie algo.
+		while (ss.wait())
 		{
 			//Comprovamos si es un Listener
 			if (ss.isReady(listener))
 			{
 				//Se añade el socket al Socket Selector
-				sf::TcpSocket socket;
+				sf::TcpSocket* socket = new sf::TcpSocket();
 				//Esperamos peticion de un cliente
-				sf::TcpListener::Status st=listener.accept(socket);
-				if (st != sf::TcpListener::Status::Done)
+				sf::TcpListener::Status st = listener.accept(*socket);
+				if (st == sf::TcpListener::Status::Done)
 				{
 					socketList.push_back(socket);
 				}
-					
-				ss.add(socket);
-				//Indicamos que hemos encontrado el elemento disparador.
-				found = true;
-				cout << "New User" << endl;
-			}
+				ss.add(*socket);
 
-			//Comprovamos si es un socket
-			else if (ss.isReady(socketList[i]))
-			{
-				//Recive el paquete del socket destino
-				sf::Socket::Status st = socketList[i].receive(buffer, sizeof(buffer), recived);
-
-				//Si ha recibido el paquete
-				if (st == sf::Socket::Status::Done)
+				//Les indicamos que se ha connectado un nuevo usuario
+				msn = "New User Connected!";
+				for (sf::TcpSocket* s : socketList)
 				{
-					//Pasar el contenido del buffer, al string de mensaje.
-					msn = buffer;
-
-					//Le enviamos el mensaje al los clientes
-					for (int j = 0; j < socketList.size(); j++)
+					if(s!=socket)s->send(msn.c_str(), msn.size() + 1);
+				}
+			}
+			else
+			{
+				for (int j = 0; j < socketList.size(); j++)
+				{
+					if (ss.isReady(*socketList[j]))
 					{
-						//Evitamos que el mensaje se envie al cliente original
-						if (i != j)
-						{
-							socketList[j].send(msn.c_str(), msn.size() + 1);
-						}
+						socketList[j]->receive(buffer, sizeof(buffer), recived);
+						//Pasar el contenido del buffer, al string de mensaje.
+						msn = buffer;
+						break;
 					}
 				}
-
-				found = true;
+				for (sf::TcpSocket* socket : socketList)
+				{
+					socket->send(msn.c_str(), msn.size() + 1);
+				}
 			}
-			else i++;
 		}
-
-		found = false;
-		i = 0;
 	}
 
 
@@ -160,9 +85,9 @@ int main()
 	listener.close();
 
 	//Desconnectamos todos los clientes
-	for (sf::TcpSocket &socket : socketList)
+	for (sf::TcpSocket* &socket : socketList)
 	{
-		socket.disconnect();
+		socket->disconnect();
 	}
 
 }

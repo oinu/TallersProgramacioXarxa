@@ -27,7 +27,7 @@ void RecivedFunction(sf::TcpSocket* socket,size_t* recived, vector<string>* aMen
 		char buffer[BUFFER_SIZE];
 		sf::Socket::Status status = socket->receive(buffer, sizeof(buffer), *recived);
 		string s = buffer;
-		if (status != sf::Socket::Status::Disconnected)
+		if (status == sf::Socket::Status::Done)
 		{
 			aMensajes->push_back(s);
 			if (aMensajes->size() > 25)
@@ -100,15 +100,19 @@ int main()
 					window.close();
 				else if (evento.key.code == sf::Keyboard::Return)
 				{
-					aMensajes.push_back(mensaje);
-					if (aMensajes.size() > 25)
-					{
-						aMensajes.erase(aMensajes.begin(), aMensajes.begin() + 1);
-					}
 					// SEND
 					// Pasamos el mensaje a std::string para hacerlo mas facil en el momento de enviarlo.
 					msn = mensaje;
-					socket.send(msn.c_str(), msn.size() + 1);
+					sf::TcpSocket::Status st=socket.send(msn.c_str(), msn.size() + 1);
+					if (st == sf::TcpSocket::Status::Disconnected)
+					{
+						msn = "Server Disconnected";
+						aMensajes.push_back(msn);
+						if (aMensajes.size() > 25)
+						{
+							aMensajes.erase(aMensajes.begin(), aMensajes.begin() + 1);
+						}
+					}
 
 					mensaje = ">";
 				}
