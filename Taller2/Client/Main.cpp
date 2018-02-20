@@ -7,7 +7,6 @@
 #include <mutex>
 
 #define MAX_MENSAJES 30
-#define SERVER_PORT 50000
 #define CLIENT_PORT 50000
 #define BUFFER_SIZE 2000
 
@@ -23,19 +22,19 @@ void RecivedFunction(sf::TcpSocket* socket,size_t* recived, vector<string>* aMen
 {
 	while (window->isOpen())
 	{
-		mu.lock();
 		char buffer[BUFFER_SIZE];
 		sf::Socket::Status status = socket->receive(buffer, sizeof(buffer), *recived);
 		string s = buffer;
 		if (status == sf::Socket::Status::Done)
 		{
+			mu.lock();
 			aMensajes->push_back(s);
 			if (aMensajes->size() > 25)
 			{
 				aMensajes->erase(aMensajes->begin(), aMensajes->begin() + 1);
 			}
+			mu.unlock();
 		}
-		mu.unlock();
 	}
 	
 }
@@ -44,6 +43,7 @@ int main()
 {
 	//ESTABLECER CONNECION
 	sf::TcpSocket socket;
+	sf::TcpSocket::Status socketStatus;
 	size_t recived;
 
 	// Obtenemos nuestra direccion ip, y nos connectamos con el puerto indicado y nuestra ip
@@ -103,8 +103,8 @@ int main()
 					// SEND
 					// Pasamos el mensaje a std::string para hacerlo mas facil en el momento de enviarlo.
 					msn = mensaje;
-					sf::TcpSocket::Status st=socket.send(msn.c_str(), msn.size() + 1);
-					if (st == sf::TcpSocket::Status::Disconnected)
+					socketStatus =socket.send(msn.c_str(), msn.size() + 1);
+					if (socketStatus == sf::TcpSocket::Status::Disconnected)
 					{
 						msn = "Server Disconnected";
 						aMensajes.push_back(msn);
@@ -143,8 +143,9 @@ int main()
 		window.display();
 		window.clear();
 	}
-	t.join();
+	
 
 	socket.disconnect();
+	t.join();
 
 }
