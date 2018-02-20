@@ -15,11 +15,13 @@ using namespace std;
 
 void DisconnectUser(vector<sf::TcpSocket*>& list, sf::SocketSelector *ss, int i)
 {
-	//Desconectamos el socket del cliente
-	//list[i]->disconnect();
 
 	//Lo eliminamos del Socket Selector
 	ss->remove(*list[i]);
+
+	//Desconectamos el socket del cliente
+	list[i]->disconnect();
+
 	delete(list[i]);
 
 	//Eliminamos el socket de la lista
@@ -55,20 +57,16 @@ int main()
 
 	//Añadimos el listener al Socket Selector
 	ss.add(listener);
-	int i = 0;
 
 	while (listenerStatus != sf::TcpListener::Status::Disconnected)
 	{
 		//Mientras haya elementos en el Socket Selector, esperara a que algun socket le envie algo.
 		while (ss.wait())
 		{
-			i++;
-			cout << i << endl;
-			cout << "Salta evento wait\n";
 			//Comprovamos si es un Listener
 			if (ss.isReady(listener))
 			{
-				cout << "ready listener\n";
+
 				//Se añade el socket al Socket Selector
 				sf::TcpSocket* socket = new sf::TcpSocket();
 				//Esperamos peticion de un cliente
@@ -99,14 +97,12 @@ int main()
 					//Encontramos el socket
 					if (ss.isReady(*socketList[j]))
 					{
-						cout << "Ha saltado un Socket" << endl;
 						//Recivimos el mensaje.
 						socketStatus = socketList[j]->receive(buffer, sizeof(buffer), recived);
 
 						//Pasar el contenido del buffer, al string de mensaje.
 						if (socketStatus == sf::TcpSocket::Status::Done)
 						{
-							cout << "Mensaje recibido" << endl;
 							msn = buffer;
 
 							//Enviamos el mensajes
@@ -125,7 +121,6 @@ int main()
 						//Si se ha desconnectado
 						else if (socketStatus == sf::TcpSocket::Status::Disconnected)
 						{
-							cout << "Se desconecta un Usuario" << endl;
 							DisconnectUser(socketList, &ss, j);
 						}
 
