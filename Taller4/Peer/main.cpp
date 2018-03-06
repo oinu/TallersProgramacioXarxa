@@ -30,9 +30,9 @@ struct Direccion
 	}
 };
 
-vector<Direccion> ParseToDireccion(sf::Packet p, int length)
+/*vector<Direccion> ParseToDireccion(sf::Packet p, int length)
 {
-}
+}*/
 
 void RecivedFunction(vector<sf::TcpSocket*> socket, vector<string>* aMensajes, sf::SocketSelector* ss)
 {
@@ -64,6 +64,7 @@ int main()
 {
 	//ESTABLECER CONNECION
 	sf::TcpSocket socket;
+	sf::TcpListener listener;
 	sf::SocketSelector ss;
 
 	char connectionType;
@@ -73,6 +74,7 @@ int main()
 	sf::Packet p;
 
 	vector<Direccion> direccionList;
+	vector<sf::TcpSocket*> socketList;
 
 	// Obtenemos nuestra direccion ip, y nos connectamos con el puerto indicado y nuestra ip
 	sf::IpAddress ip = sf::IpAddress::getLocalAddress();
@@ -116,10 +118,46 @@ int main()
 					direccionList.push_back(d);
 				}
 			}
-		}
-	}
 
-	//----------------------------------//
+			//Por cada dirección
+			for (Direccion d : direccionList)
+			{
+				//creamos un socket
+				sf::TcpSocket* newSocket = new sf::TcpSocket();
+				//Lo connectamos con el puerto deseado.
+				newSocket->connect(d.ip, d.port);
+				//Lo añadimos al socket selector
+				ss.add(*newSocket);
+				//Lo añadimos al vector de sockets
+				socketList.push_back(newSocket);
+			}
+		}
+		cout << "ERES EL " << lenght + 1 << " DE 4" << endl;
+	}
+	//Nos guardamos nuestro puerto
+	int localPort = socket.getLocalPort();
+
+	//Liberamos el socket
+	socket.disconnect();
+
+	//Iniciamos el listener
+	listener.listen(localPort);
+
+	//Escuchamos tantas peticiones como usuarios falent
+	for (int i = socketList.size(); i < 3; i++)
+	{
+		//Creamos un nuevo socket por conexion nueva
+		sf::TcpSocket* nSocket = new sf::TcpSocket();
+		//Esperamos a que aparezcan
+		listener.accept(*nSocket);
+		//Lo introducimos en el vector
+		socketList.push_back(nSocket);
+		//Lo añadimos al socket selector
+		ss.add(*nSocket);
+	}
+	
+	//Cerramos el listener
+	listener.close();
 	std::vector<std::string> aMensajes;
 
 	sf::Vector2i screenDimensions(800, 600);
@@ -150,7 +188,9 @@ int main()
 	separator.setPosition(0, 550);
 
 	string msn;
-	thread t(RecivedFunction,&socket, &aMensajes, &ss);
+
+	//Lanzamos un Thread para recivir mensajes
+	thread t(RecivedFunction,socketList, &aMensajes, &ss);
 
 	while (window.isOpen())
 	{
@@ -177,7 +217,15 @@ int main()
 					msn = mensaje;
 
 					//Se tiene que enviar a cada Peer
-					socket.send(msn.c_str(), msn.size() + 1);
+					//socket.send(msn.c_str(), msn.size() + 1);
+					for (sf::TcpSocket* s : socketList)
+					{
+						socketStatus=s->send(msn.c_str(), msn.size() + 1);
+						if (socketStatus != sf::TcpSocket::Status::Done)
+						{
+							cout << "Error" << endl;
+						}
+					}
 
 					mensaje = ">";
 				}

@@ -1,0 +1,3 @@
+﻿  main.cpp
+c:\users\alumne\desktop\tallersprogramacioxarxa\taller4\bootstrap\main.cpp(58): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+  Bootstrap.vcxproj -> C:\Users\alumne\Desktop\TallersProgramacioXarxa\Taller4\x64\Debug\Bootstrap.exe

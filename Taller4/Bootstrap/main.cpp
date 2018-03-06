@@ -50,14 +50,17 @@ int main()
 		//Creamos un socket y escuchamos 
 		sf::TcpSocket socket;
 		listener.accept(socket);
+		
+		
+		//Indicamos el numero de paquetes que recibira
+		sf::Packet p;
+		cout << "numero de direcciones:" << dList.size() << endl;
+		int size = dList.size();
+		p << size;
+		socket.send(p);
+
 		if (i != 0)
 		{
-			sf::Packet p;
-
-			//Indicamos el numero de paquetes que recibira
-			p << dList.size();
-			socket.send(p);
-
 			//Enviamos tantos paquetes como direcciones conocemos
 			for (int j = 0; j < dList.size(); j++)
 			{
@@ -67,7 +70,7 @@ int main()
 			}			
 		}
 		//posarlo a un vector de la estructura direccio, que conte la ip i el port.
-		Direccion d(socket.getRemoteAddress, socket.getRemotePort);
+		Direccion d((socket.getRemoteAddress()).toString(), socket.getRemotePort());
 		dList.push_back(d);
 		
 		socket.disconnect();
