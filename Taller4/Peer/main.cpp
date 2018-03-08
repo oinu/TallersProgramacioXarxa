@@ -30,10 +30,6 @@ struct Direccion
 	}
 };
 
-/*vector<Direccion> ParseToDireccion(sf::Packet p, int length)
-{
-}*/
-
 void RecivedFunction(vector<sf::TcpSocket*> socket, vector<string>* aMensajes, sf::SocketSelector* ss)
 {
 	char buffer[BUFFER_SIZE];
@@ -259,6 +255,12 @@ int main()
 
 	//Acabar el Thread
 	ss.clear();
+	direccionList.clear();
+	for (sf::TcpSocket* s : socketList)
+	{
+		s->disconnect();
+	}
+	socketList.clear();
 	t.join();
 	
 
